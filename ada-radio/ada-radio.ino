@@ -88,6 +88,8 @@ void isrA() {
     targetFmStation += 10;
   else
     targetFmStation -= 10;
+
+    displayNumber(targetFmStation);
 }
 
 void tune(int freq) {
