@@ -25,6 +25,8 @@
 #define RESETPIN 12
 #define ENCODER_A 2
 #define ENCODER_B 3
+#define readA bitRead(PIND, ENCODER_A) //--faster than digitalRead()
+#define readB bitRead(PIND, ENCODER_B) //-- faster than digitalRead()
 #define MAX7219DIN 4
 #define MAX7219CS 5
 #define MAX7219CLK 6
@@ -33,7 +35,6 @@ Adafruit_Si4713 radio = Adafruit_Si4713(RESETPIN);
 
 int currentFmStation = 0;
 volatile int targetFmStation = 10360;
-unsigned long n=9999;
 
 void setup() {
   Serial.begin(9600);
@@ -79,14 +80,14 @@ void setup() {
   //-- Listen to rotary encoder
   pinMode(ENCODER_A, INPUT_PULLUP);
   pinMode(ENCODER_B, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_A), encoder, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_A), isrA, CHANGE);
 }
 
-void encoder() {
-  if (digitalRead(ENCODER_A) == digitalRead(ENCODER_B))
-    targetFmStation -= 10;
-  else
+void isrA() {
+  if (readA != readB)
     targetFmStation += 10;
+  else
+    targetFmStation -= 10;
 }
 
 void tune(int freq) {
