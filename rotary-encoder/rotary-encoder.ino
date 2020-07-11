@@ -17,7 +17,7 @@ void loop() {
 
 void encoder() {
   if (digitalRead(encoderA) == digitalRead(encoderB))
-    encoderValue++;
-  else
     encoderValue--;
+  else
+    encoderValue++;
 }
