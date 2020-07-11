@@ -38,7 +38,7 @@ volatile int targetFmStation = 10360;
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Adafruit Radio - Si4713");
+  Serial.println("DIY Radio");
 
   //-- Init LED digit screen
   initDisplay();
@@ -70,9 +70,8 @@ void setup() {
 
   //-- Begin the RDS/RDBS transmission
   radio.beginRDS();
-  radio.setRDSstation("AdaRadio");
-  radio.setRDSbuffer("Plug me in!");
-  Serial.println("RDS on!");  
+  radio.setRDSstation("DIY Radio");
+  radio.setRDSbuffer("Non-stop tunes, day and night!"); 
 
   //-- Set GP1 and GP2 to output
   radio.setGPIOctrl(_BV(1) | _BV(2));
