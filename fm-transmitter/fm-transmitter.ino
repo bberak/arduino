@@ -22,7 +22,7 @@
 #include <Adafruit_Si4713.h>
 
 #define _BV(n) (1 << n)
-#define RESETPIN 12
+#define RESETPIN 7
 #define ENCODER_A 2
 #define ENCODER_B 3
 #define readA bitRead(PIND, ENCODER_A) //--faster than digitalRead()
@@ -70,7 +70,7 @@ void setup() {
 
   //-- Begin the RDS/RDBS transmission
   radio.beginRDS();
-  radio.setRDSstation("DIY Radio");
+  radio.setRDSstation("DIYradio");
   radio.setRDSbuffer("Non-stop tunes, day and night!"); 
 
   //-- Set GP1 and GP2 to output
@@ -84,9 +84,9 @@ void setup() {
 
 void isrA() {
   if (readA != readB)
-    targetFmStation += 10;
-  else
     targetFmStation -= 10;
+  else
+    targetFmStation += 10;
 
     displayNumber(targetFmStation);
 }
