@@ -107,14 +107,15 @@ void initDisplay(){
   pinMode(MAX7219DIN,OUTPUT);
   pinMode(MAX7219CS,OUTPUT);
   pinMode(MAX7219CLK,OUTPUT);
-  digitalWrite(MAX7219CS,HIGH);   //CS off
-  digitalWrite(MAX7219CLK,LOW);   //CLK low
-  sendDataToDisplay(15,0);        //test mode off
-  sendDataToDisplay(12,1);        //display on
-  sendDataToDisplay(9,255);       //decode all digits
-  sendDataToDisplay(11,7);        //scan all
+  digitalWrite(MAX7219CS,HIGH); // CS off
+  digitalWrite(MAX7219CLK,LOW); // CLK low
+  sendDataToDisplay(15,0); // test mode off
+  sendDataToDisplay(12,1); // display on
+  sendDataToDisplay(9,255); // decode all digits
+  sendDataToDisplay(11,7); // scan all
+  //-- One-by-one, send zero to all the digits
   for(int i=1;i<9;i++){
-    sendDataToDisplay(i,0);       //blank all
+    sendDataToDisplay(i,0); // blank all
   }
 }
 
@@ -123,29 +124,97 @@ void setDisplayBrightness(byte b){  //0-15 is range high nybble is ignored
 }
 
 void sendDataToDisplay(byte reg, byte data){
-  digitalWrite(MAX7219CS,LOW);   //CS on
+  digitalWrite(MAX7219CS,LOW);   //CS on (chip select?)
+  
   for(int i=128;i>0;i=i>>1){
+    //-- Shifts bits by one each time through the loop
+    //-- Eg: 128 -> 64 -> 32 -> 16 -> 8 -> 4 -> 2 -> 1 -> 0
+    
     if(i&reg){
+      //-- The reg variable holds the address of the
+      //-- digit or register you want to send data to.
+      //-- Digits range from 0001 to 1000
+
+      //-- For example, if I you want to send data to the fifth digit, the
+      //-- reg variable will contain 101. 
+
+      //-- So performing bitwise operations on i and reg starting from i = 128 will look like:
+
+      //-- 128 & 5
+      //-- i:   10000000 & (128)
+      //-- reg: 00000101 (5)
+      //-- res: 00000000 (falsey)
+
+      //-- ...
+
+      //-- 4 & 5
+      //-- i:   00000100 & (4)
+      //-- reg: 00000101 (5)
+      //-- res: 00000100 (truthy)
+
+      //-- 2 & 5
+      //-- i:   00000010 & (2)
+      //-- reg: 00000101 (5)
+      //-- res: 00000000 (falsey)
+
+      //-- 1 & 5
+      //-- i:   00000001 & (1)
+      //-- reg: 00000101 (5)
+      //-- res: 00000001 (truthy)
+    
+      //-- A truthy result means a 1 is sent down the data line.
+      //-- A falsey result means a 0 is sent down the data line
+      
       digitalWrite(MAX7219DIN,HIGH);
-    }else{
+    } else {
       digitalWrite(MAX7219DIN,LOW);      
     }
-  digitalWrite(MAX7219CLK,HIGH);   
-  digitalWrite(MAX7219CLK,LOW);   //CLK toggle    
+
+    //-- The clock is toggled after each bit is sent
+    //-- to signal the slave to read the data line
+    digitalWrite(MAX7219CLK,HIGH);   
+    digitalWrite(MAX7219CLK,LOW); // CLK toggle  
   }
+
+  //-- After the above, the dataline would have received 8 bits: 0-0-0-0-0-1-0-1
+  //-- Why are we doing this? Why can't we just send the bye directly?
+  //-- Because SPI is a serial communication protocol and we need to send 1 bit at a time
+  //-- down the line. Hence the loop..
+  
   for(int i=128;i>0;i=i>>1){
+    //-- The process in this loop is the same, except will
+    //-- now compare it with the data that we want to send.
+    //-- Again, this is necessary because we want to send a bit
+    //-- at a time from the byte, and the loop with the bitwise
+    //-- & operator helps us achieve this.
+    
     if(i&data){
       digitalWrite(MAX7219DIN,HIGH);
     }else{
       digitalWrite(MAX7219DIN,LOW);      
     }
-  digitalWrite(MAX7219CLK,HIGH);   
-  digitalWrite(MAX7219CLK,LOW);   //CLK toggle    
+
+    //-- Again, toggle the clock to tell
+    //-- the salve to read the data line
+    digitalWrite(MAX7219CLK,HIGH);   
+    digitalWrite(MAX7219CLK,LOW); // CLK toggle    
   }
-  digitalWrite(MAX7219CS,HIGH);   //CS off
+
+  //-- We have sent the digit address and data down the line
+  //-- [digit or address]-[data or number]
+  //-- [0-0-0-0-0-1-0-1]-[1-0-0-0-0-0-0-0] 
+  //-- Note: The above is not a physical representation
+  //-- as the actual endianess of the bit may differ..
+
+  //-- Tell the slave that the packet is complete.
+  digitalWrite(MAX7219CS,HIGH); // CS off
 }
 
 void displayNumber(unsigned long n){
+  //-- This function receives a number, say 10360
+  //-- and has to display it on an 8 digit strip,
+  //-- justified to the right.
+  
   unsigned long k=n;
   byte blank=0;
   for(int i=1;i<9;i++){
@@ -157,6 +226,39 @@ void displayNumber(unsigned long n){
     k=k/10;
     if(k==0){blank=1;}
   }
+
+  //-- k = 10360
+  //-- blank = 0
+  //-- blank is falsey
+  //-- Send: 1, 10360 % 10 (0)
+  //-- k = 10360/10 (1036)
+  //-- blank is falsey
+  //-- Send: 2, 1036 % 10 (6)
+  //-- k = 1036/10 (103)
+  //-- blank is falsey
+  //-- Send: 3, 103 % 10 (3)
+  //-- k = 103/10 (10)
+  //-- blank is falsey
+  //-- Send: 4, 10 % 10 (0)
+  //-- k = 10/10 (1)
+  //-- blank is falsey
+  //-- Send: 5, 1 % 10 (1)
+  //-- k = 1/10 (0)
+  //-- blank = 1
+  //-- blank is truthy
+  //-- Send: 6, 15 (blank)
+  //-- Send: 7, 15 (blank)
+  //-- Send: 8, 15 (blank)
+
+  //-- Timewise this sends the following 
+  //-- data to display (rightmost being earliest):
+  //-- blank-blank-blank-1-0-3-6-0
+  //-- However, order of instructions is not necessarily
+  //-- important here because the sendDataToDisplay function
+  //-- takes care of serializing the register/address and data
+  //-- into a continuous stream of bits for each call with the correct
+  //-- endianess. Indeed, you can set the number to be displayed 
+  //-- on the digits in any order you like.
 }
 
 void loop() {
