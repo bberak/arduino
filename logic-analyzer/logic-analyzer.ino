@@ -1,7 +1,7 @@
-const char ADDR[] = { 28, 26, 24, 22, 30, 32, 34, 36, 38, 40, 42, 44, 46,  48, 50, 52 }; // A15 -> A0
-const char DATA[] = { 39, 41, 43, 45, 47, 49, 51, 53 }; // D7 -> D0
-#define CLOCK 2
-#define READ_WRITE 3
+const char ADDR[] = { 28, 26, 24, 22, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53 }; // A15 -> A0
+const char DATA[] = { 38, 40, 42, 44, 46, 48, 50, 52 }; // D7 -> D0
+#define CLOCK 3
+#define READ_WRITE 2
 
 void setup() {
   // Prep address pints for reading
