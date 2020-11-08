@@ -11,12 +11,12 @@ void loop()
   //-- Toggle signal
   signal = !signal;
 
-  //-- Read analog input, and round into 20 bands.
-  //-- Then multiply band by 50 to give a period between
+  //-- Read analog input, and round into 100 bands.
+  //-- Then multiply band by 10 to give a period between
   //-- 0ms and 1000ms (effectively this generates a max
-  //-- clock cycle of 20hz).
+  //-- clock cycle of 100hz).
   int raw = analogRead(A6);
-  int period = map(raw, 0, 1023, 1, 20) * 50;
+  int period = map(raw, 0, 1023, 1, 100) * 10;
   
   //-- Only output high if the signal is on and the period is less than 1000.
   //-- A period of 1000ms indicates the slowest speed setting (potentiometer is
